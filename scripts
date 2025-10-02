@@ -1,0 +1,20 @@
+# === Project-scoped env ===
+export TASK_API_BASE="http://127.0.0.1:8000"
+
+# === Project-scoped helpers ===
+task_token() {
+  user=$1
+  password=$2
+  export TOKEN=$(curl -s -X POST "$TASK_API_BASE/auth/token" \
+      -H 'Content-Type: application/x-www-form-urlencoded' \
+      --data-urlencode "username=$user" \
+      --data-urlencode "password=$password"\
+ | jq | grep access_token | cut -d ":" -f 2 |sed -n 's/.*"\(.*\)".*/\1/p')
+}
+
+task_new() { curl -s -X POST "$TASK_API_BASE/tasks/" -H "Authorization: Bearer ${TOKEN:?Run task_token first}" -H "Content-Type: application/json" -d "$1" | jq .; }
+task_ls()  { curl -s "$TASK_API_BASE/tasks/"    -H "Authorization: Bearer ${TOKEN:?Run task_token first}" | jq .; }
+task_up()  { curl -s -X PATCH "$TASK_API_BASE/tasks/${1:?id}" -H "Authorization: Bearer ${TOKEN:?Run task_token first}" -H "Content-Type: application/json" -d "${2:?json}" | jq .; }
+task_rm()  { curl -s -X DELETE "$TASK_API_BASE/tasks/${1:?id}" -H "Authorization: Bearer ${TOKEN:?Run task_token first}" -i; }
+
+echo "[autoenv] task_manager helpers loaded (task_token/task_new/task_ls/task_up/task_rm)"
